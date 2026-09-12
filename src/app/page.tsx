@@ -1,5 +1,9 @@
 import { VoiceStudio } from "@/components/voice-studio";
 
+// TODO: adotar Cache Components e remover esta saída temporária.
+// Guia: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default function Home() {
   return (
     <main>
@@ -41,7 +45,6 @@ export default function Home() {
         </section>
 
         <VoiceStudio />
-
       </div>
 
       <footer>
