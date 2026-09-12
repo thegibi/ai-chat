@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-// TODO: adotar Cache Components e remover esta saída temporária.
-// Guia: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 export const metadata: Metadata = {
   title: "Voz Local — transforme texto na sua voz",
   description:
