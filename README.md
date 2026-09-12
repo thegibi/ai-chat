@@ -1,36 +1,196 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Voz Local
 
-## Getting Started
+MVP local para transformar texto em português do Brasil em fala com a voz da
+própria pessoa. A interface grava ou recebe uma amostra, envia os dados apenas
+para um serviço Python no computador, reproduz o resultado e permite baixar um
+arquivo WAV.
 
-First, run the development server:
+Não há serviço pago, chave de API nem envio de texto ou voz a terceiros. O
+primeiro uso acessa o Hugging Face somente para baixar os pesos públicos do
+modelo.
+
+## Como funciona
+
+- **Interface:** Next.js, React e gravação nativa pelo navegador.
+- **Síntese:** Chatterbox Multilingual V3 local, licenciado em MIT.
+- **Português:** variante `v3`, idioma do modelo fixado como `pt` e experiência
+  configurada para `pt-BR`.
+- **Voz:** clonagem zero-shot a partir da amostra enviada em cada solicitação.
+- **Responsabilidade:** consentimento obrigatório e marca-d’água PerTh inserida
+  pelo próprio Chatterbox em todo áudio gerado.
+
+O arquivo de dependências fixa o commit oficial
+`5de7a54aa4e5e2baadb0182dde554908b48b85c2` do Chatterbox. Esse commit contém o
+carregador Multilingual V3; a distribuição PyPI 0.1.7 ainda expõe somente a
+assinatura antiga do carregador.
+
+## Requisitos
+
+- Node.js 20 ou mais recente e pnpm;
+- Python 3.10 a 3.13 — Python 3.11 é a opção recomendada pelo Chatterbox;
+- Git e FFmpeg disponíveis no terminal;
+- cerca de 10 GB livres para dependências e pesos do modelo;
+- 8 GB de memória como mínimo prático. GPU CUDA ou Apple Silicon é opcional,
+  mas reduz bastante o tempo de síntese.
+
+No Ubuntu ou Debian, instale o FFmpeg com:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+sudo apt-get update
+sudo apt-get install -y ffmpeg
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No macOS:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+brew install ffmpeg
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Instalação
 
-## Learn More
+Instale a interface:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm install
+cp .env.example .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Crie o ambiente Python e instale o serviço de voz:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r backend/requirements.txt
+```
 
-## Deploy on Vercel
+No PowerShell do Windows, a ativação equivalente é:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r backend/requirements.txt
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Executar
+
+Abra dois terminais na raiz do projeto.
+
+No primeiro, inicie o serviço local de voz:
+
+```bash
+TTS_DEVICE=auto .venv/bin/python -m uvicorn backend.app:app \
+  --host 127.0.0.1 --port 8000
+```
+
+Valores aceitos em `TTS_DEVICE`: `auto`, `cpu`, `cuda` ou `mps`. No PowerShell,
+use `$env:TTS_DEVICE="auto"` antes do comando.
+
+No segundo terminal, inicie a interface:
+
+```bash
+pnpm dev
+```
+
+Abra [http://localhost:3000](http://localhost:3000). O microfone funciona em
+`localhost`; em outro domínio, o navegador exige HTTPS.
+
+Na primeira geração, o Chatterbox baixa os pesos do modelo e pode demorar
+alguns minutos. As próximas solicitações reutilizam o modelo já carregado.
+
+## Uso
+
+1. Escreva até 300 caracteres em português do Brasil.
+2. Grave de 6 a 15 segundos ou envie WAV, MP3, M4A, WebM, OGG ou FLAC.
+3. Use uma fala limpa, sem música e com pouco ruído.
+4. Confirme que a voz é sua e gere o áudio.
+5. Ouça o resultado e selecione **Baixar áudio WAV**.
+
+Exemplo de texto:
+
+> Olá! Esta é uma demonstração criada localmente com a minha própria voz.
+
+## Verificação direta do serviço
+
+Confira a configuração de idioma sem carregar o modelo:
+
+```bash
+curl http://127.0.0.1:8000/saude
+```
+
+Resposta esperada:
+
+```json
+{
+  "status": "pronto",
+  "idioma": "pt-BR",
+  "modelo": "ResembleAI/chatterbox",
+  "versao_modelo": "v3",
+  "modelo_carregado": false,
+  "dispositivo": "detectado no primeiro uso"
+}
+```
+
+Faça uma síntese completa com uma amostra própria:
+
+```bash
+curl --fail-with-body \
+  -F 'texto=Olá! Esta frase foi criada em português do Brasil.' \
+  -F 'consentimento=true' \
+  -F 'amostra=@minha-voz.wav;type=audio/wav' \
+  http://127.0.0.1:8000/sintetizar \
+  --output minha-voz-em-portugues.wav
+```
+
+## Segurança e privacidade
+
+- O serviço escuta apenas em `127.0.0.1` no comando recomendado.
+- A API exige consentimento explícito em toda síntese.
+- Texto limitado a 300 caracteres; envio de áudio limitado a 15 MB.
+- O formato real é identificado pela assinatura do arquivo, não apenas pelo
+  nome ou tipo informado pelo navegador.
+- O nome de arquivo enviado nunca é reutilizado.
+- A amostra fica em um diretório temporário privado, com permissão restrita, e
+  é apagada junto com o resultado temporário ao fim da solicitação.
+- As sínteses são serializadas para impedir a mistura de condicionais de voz
+  entre solicitações simultâneas.
+- Respostas não são armazenadas em cache.
+- O áudio inclui a marca-d’água digital padrão do Chatterbox.
+
+Não exponha a porta 8000 diretamente na internet. Para uso compartilhado, adote
+autenticação, limite de requisições, isolamento do processo e uma política
+formal de consentimento.
+
+## Testes
+
+Testes da interface, validações e rota de encaminhamento:
+
+```bash
+pnpm test
+pnpm lint
+pnpm build
+```
+
+Testes do serviço Python sem baixar o modelo pesado:
+
+```bash
+python -m venv .venv-test
+source .venv-test/bin/activate
+python -m pip install -r backend/requirements-test.txt
+python -m pytest backend/tests
+```
+
+Os testes usam um sintetizador substituto para validar upload, descarte,
+consentimento e resposta WAV. Um teste separado confirma que o adaptador real
+carrega a variante `v3` e chama a geração com `language_id="pt"`. A verificação
+manual com `curl` acima cobre o caminho de inferência completa após o download
+dos pesos.
+
+## Limitações do MVP
+
+- Inferência em CPU funciona, mas pode ser lenta.
+- O modelo recebe o código oficial `pt`; o sotaque pt-BR é reforçado pelo texto
+  brasileiro e pela amostra da própria pessoa.
+- Cada solicitação aceita uma amostra e produz um WAV; não há biblioteca de
+  vozes persistente, justamente para evitar retenção desnecessária.
