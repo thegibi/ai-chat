@@ -19,6 +19,11 @@ modelo.
 - **Responsabilidade:** consentimento obrigatório e marca-d’água PerTh inserida
   pelo próprio Chatterbox em todo áudio gerado.
 
+O arquivo de dependências fixa o commit oficial
+`5de7a54aa4e5e2baadb0182dde554908b48b85c2` do Chatterbox. Esse commit contém o
+carregador Multilingual V3; a distribuição PyPI 0.1.7 ainda expõe somente a
+assinatura antiga do carregador.
+
 ## Requisitos
 
 - Node.js 20 ou mais recente e pnpm;
