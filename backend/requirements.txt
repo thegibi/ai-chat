@@ -1,0 +1,2 @@
+-r requirements-api.txt
+chatterbox-tts==0.1.7
