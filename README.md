@@ -24,7 +24,7 @@ modelo.
 - Node.js 20 ou mais recente e pnpm;
 - Python 3.10 a 3.13 — Python 3.11 é a opção recomendada pelo Chatterbox;
 - Git e FFmpeg disponíveis no terminal;
-- cerca de 5 GB livres para dependências e pesos do modelo;
+- cerca de 10 GB livres para dependências e pesos do modelo;
 - 8 GB de memória como mínimo prático. GPU CUDA ou Apple Silicon é opcional,
   mas reduz bastante o tempo de síntese.
 

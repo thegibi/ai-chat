@@ -314,6 +314,8 @@ export function VoiceStudio() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSynthesizing || isRecording) return;
+
     setError(null);
     setSuccessMessage(null);
 
@@ -517,7 +519,12 @@ export function VoiceStudio() {
                 <TrashIcon />
               </button>
             </div>
-            <audio controls preload="metadata" src={sampleUrl}>
+            <audio
+              aria-label="Ouvir amostra de voz"
+              controls
+              preload="metadata"
+              src={sampleUrl}
+            >
               Seu navegador não consegue reproduzir esta amostra.
             </audio>
           </div>
@@ -566,7 +573,13 @@ export function VoiceStudio() {
 
         {resultUrl ? (
           <div className="result-audio">
-            <audio controls autoPlay preload="metadata" src={resultUrl}>
+            <audio
+              aria-label="Ouvir áudio gerado"
+              controls
+              autoPlay
+              preload="metadata"
+              src={resultUrl}
+            >
               Seu navegador não consegue reproduzir o áudio gerado.
             </audio>
             <div className="result-actions">
